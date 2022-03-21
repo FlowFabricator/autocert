@@ -65,6 +65,7 @@ func TestInitialiseCA_ExpiryBelowMinimum(t *testing.T) {
 	defer tearDown()
 	cert, err := InitialiseCA(&CertificateOptions{
 		SubjectName: "test",
+		ExpiryDate:  time.Now().AddDate(4, 0, 0),
 	})
 	if !errors.Is(err, ErrCAExpiryDateBelowMinimum) {
 		t.Errorf("Expected CA expiry date below minimum error but instead got: %v", err)
@@ -414,10 +415,12 @@ func TestRequestCertificate_RunTLSConnection(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create cert file: %v", err)
 	}
+	defer certFile.Close()
 	certKeyFile, err := os.Create("cert-key.crt")
 	if err != nil {
 		t.Fatalf("Failed to create certificate key file: %v", err)
 	}
+	defer certKeyFile.Close()
 
 	err = pem.Encode(certFile, &pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
 	if err != nil {
@@ -449,6 +452,8 @@ func TestRequestCertificate_RunTLSConnection(t *testing.T) {
 		t.Fatalf("Failed to connect via tls: %v", err)
 	}
 	defer conn.Close()
+	os.Remove(certFile.Name())
+	os.Remove(certKeyFile.Name())
 }
 
 func BenchmarkRequestCertificate(b *testing.B) {
