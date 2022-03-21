@@ -1,4 +1,4 @@
-module go-pki
+module autocert
 
 go 1.18
 
