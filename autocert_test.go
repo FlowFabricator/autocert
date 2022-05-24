@@ -456,6 +456,30 @@ func TestRequestCertificate_RunTLSConnection(t *testing.T) {
 	os.Remove(certKeyFile.Name())
 }
 
+func TestClearCA(t *testing.T) {
+	defer tearDown()
+	setupTestCA(t)
+
+	if caCert == nil || caKey == nil || caCertPem == nil || caKeyPem == nil {
+		t.Fatalf("CA wasn't properly initialised")
+	}
+
+	ClearCA()
+
+	if caCert != nil {
+		t.Errorf("CA cert still exists after clearing CA")
+	}
+	if caKey != nil {
+		t.Errorf("CA key still exists after clearing CA")
+	}
+	if caCertPem != nil {
+		t.Errorf("CA cert pem still exists after clearing CA")
+	}
+	if caKeyPem != nil {
+		t.Errorf("CA key pem still exists after clearing CA")
+	}
+}
+
 func BenchmarkRequestCertificate(b *testing.B) {
 	defer tearDown()
 
