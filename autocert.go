@@ -316,6 +316,17 @@ func RequestCertificate(certOpts *CertificateOptions) ([]byte, []byte, error) {
 }
 
 /*
+ClearCA removes any stored CA data. In order to issue certificates, InitialiseCA or
+ImportCA will have to be called again.
+*/
+func ClearCA() {
+	caCertPem = nil
+	caKeyPem = nil
+	caCert = nil
+	caKey = nil
+}
+
+/*
 GetCACertificate Returns the current CA certificate
 */
 func GetCACertificate() *x509.Certificate {
