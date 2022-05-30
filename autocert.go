@@ -208,26 +208,9 @@ func ImportCA(certificate []byte, key []byte) error {
 	if caCert != nil {
 		return ErrCAAlreadyInitialised
 	}
-	// Check if certificate and key is PEM encoded
-	if p, _ := pem.Decode(certificate); p == nil {
-		return ErrCertificateNotPemEncoded
-	}
-	if p, _ := pem.Decode(key); p == nil {
-		return ErrKeyNotPemEncoded
-	}
-	// Load the certificate and key pair
-	tlsCert, err := tls.X509KeyPair(certificate, key)
+	cert, tlsCert, err := ParseRootCA(certificate, key)
 	if err != nil {
 		return err
-	}
-	// Parse into x509.Certificate object
-	cert, err := x509.ParseCertificate(tlsCert.Certificate[0])
-	if err != nil {
-		return err
-	}
-	// Check the certificate is a root CA, if not, return ErrCAIsNotRootCA
-	if cert.AuthorityKeyId != nil && bytes.Compare(cert.AuthorityKeyId, cert.SubjectKeyId) != 0 {
-		return ErrCAIsNotRootCA
 	}
 
 	// Set the values as the current CA
@@ -236,6 +219,31 @@ func ImportCA(certificate []byte, key []byte) error {
 	caKey = tlsCert.PrivateKey.(ed25519.PrivateKey)
 	caCert = cert
 	return nil
+}
+
+func ParseRootCA(certificate []byte, key []byte) (*x509.Certificate, tls.Certificate, error) {
+	// Check if certificate and key is PEM encoded
+	if p, _ := pem.Decode(certificate); p == nil {
+		return nil, tls.Certificate{}, ErrCertificateNotPemEncoded
+	}
+	if p, _ := pem.Decode(key); p == nil {
+		return nil, tls.Certificate{}, ErrKeyNotPemEncoded
+	}
+	// Load the certificate and key pair
+	tlsCert, err := tls.X509KeyPair(certificate, key)
+	if err != nil {
+		return nil, tls.Certificate{}, err
+	}
+	// Parse into x509.Certificate object
+	cert, err := x509.ParseCertificate(tlsCert.Certificate[0])
+	if err != nil {
+		return nil, tls.Certificate{}, err
+	}
+	// Check the certificate is a root CA, if not, return ErrCAIsNotRootCA
+	if cert.AuthorityKeyId != nil && bytes.Compare(cert.AuthorityKeyId, cert.SubjectKeyId) != 0 {
+		return nil, tls.Certificate{}, ErrCAIsNotRootCA
+	}
+	return cert, tlsCert, nil
 }
 
 /*
